@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="viewport" content="width=700,maximum-scale=1.0,user-scalable=yes">
+        <title>Vimeosubs</title>   
+		<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.0/jquery.min.js"></script> 
+        <script type="text/javascript" src="js/jquery.vimeosubs.min.js"></script> 
+        <script type="text/javascript">
+        jQuery(document).ready(function() { 
+        	$('#player_1').vimeosubs({
+            	list: 'srt/list.xml',
+            	fontsize: 14, 
+            	select: $('#lang-select')
+            }); 
+        });
+        </script> 
+    </head>
+    <body>
+       	<iframe id="player_1" src="http://player.vimeo.com/video/17712557?api=1&amp;player_id=player_1" width="540" height="304" frameborder="0"></iframe>
+        <select id="lang-select"></select>
+    </body>
+</html>

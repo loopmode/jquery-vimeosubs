@@ -1,0 +1,25 @@
+.vimeosubs {
+	position: relative; 
+	font-family: Arial, Sans;
+}
+.vimeosubs iframe {
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	z-index: 0;
+}
+.vimeosubs .subs {
+	position: absolute;
+	bottom: 30px;
+	width: 100%;
+	text-align: center;
+	z-index: 1;
+}
+  
+.vimeosubs .text span {
+	color: white; 
+	padding: 5px;
+	font-size: 16px;
+	cursor: default; 
+}
+ 
