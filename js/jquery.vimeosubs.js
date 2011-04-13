@@ -1,14 +1,34 @@
 /*globals window, document, console, Froogaloop, $f, swfobject, navigator, jQuery*/ 
 (function($){
-
 	
 	/*
 	 * -----------------------------------------------------------------------------------------------
 	 * 
 	 * HTML5 VERSION
+	 * Here we have a prototype-class wrapper for an iframe.
 	 * 
 	 * -----------------------------------------------------------------------------------------------
 	 */
+	
+	/**
+	 * add DOMNodeRemoved event for MSIE
+	 */  
+	(function(){ 
+		var originalRemoveMethod = jQuery.fn.remove;
+		  
+		jQuery.fn.remove = function(){ 
+			originalRemoveMethod.apply( this, arguments );
+			// -------------------------------------------- //
+			// If this is IE, then manually trigger the DOM
+			// node removed event on the given element.
+			if (jQuery.browser.msie){
+				jQuery( this ).trigger({
+					type: "DOMNodeRemoved"
+				});
+			}
+			// -------------------------------------------- //
+		}
+	})();
 	
 	var urls = {
 		froogaloop: 'http://a.vimeocdn.com/js/froogaloop2.min.js',
@@ -17,7 +37,11 @@
 	};
 	 
 	var VimeoHtmlSubs = function(iframe, options) {
-		this.iframe = iframe; 
+		this.iframe = iframe;
+				
+		if (options && options.urls) {
+		    urls = $.extend({}, urls, options.urls);
+		}
 		this.options = $.extend({}, {
 			scripts: [
 				{
@@ -67,27 +91,33 @@
 			});
 		},
 		
-		loadScripts: function() {
-			var scriptCount = 0;
+		loadScripts: function() { 
 			var self = this;  
+			var scriptCount = 0;
+			var next = function() {
+				scriptCount++;
+				if (scriptCount === self.options.scripts.length) {
+					self.scriptsLoaded();
+				}
+			};
 			$(this.options.scripts).each(function(i,s) {
-				if (!s.hasOwnProperty('check') || !window.hasOwnProperty(s.check)) {				 
-					$.getScript(s.src, function() {
-						scriptCount++;
-						if (scriptCount === self.options.scripts.length) {
-							self.scriptsLoaded();
-						}
-					});
+				if (s.hasOwnProperty('check') && window.hasOwnProperty(s.check)) { 
+					next();
+				}
+				else { 
+					$.getScript(s.src, next);
 				}
 			});
 		},
 
-		scriptsLoaded: function() {
+		scriptsLoaded: function() { 
 			this.createElements();
-			Froogaloop(this.iframe).addEvent('ready', this.delegate(this, this.playerReady));
-			 
-		},
 
+            this.froogaloop = $f(this.iframe);  
+            this.froogaloop.addEvent('ready', this.delegate(this, this.playerReady));
+		},
+ 
+		
 		//-------------------------------------------------------------------------------------------
 		//
 		// DOM MANIPULATION
@@ -108,6 +138,14 @@
 				+'</div>'
 			));
 			c.find('.text span').css('text-shadow', this.options.textShadow);
+
+			var self = this;
+			
+			$('body').bind('DOMNodeRemoved', function(e) {
+				if (e.target === i[0]) {
+					self.destroy();
+				}
+			});		
 		},
 		
 		
@@ -118,7 +156,6 @@
 		//-------------------------------------------------------------------------------------------
 
 		playerReady: function(player_id){ 
-	        this.froogaloop = $f(player_id); 
 	        this.froogaloop.addEvent('playProgress', this.delegate(this, this.onPlayProgress));  
 	        this.froogaloop.addEvent('seek', this.delegate(this, this.onSeek));  
 			this.loadSrt(); 
@@ -127,7 +164,7 @@
 
 		onPlayProgress: function(data) {
 			var self = this;
-			
+			 
 			if (!this.subs) {
 				return;
 			}
@@ -136,11 +173,7 @@
 				var line = self.getLineByTime(value);
 				self.setCurrentLine(line);
 			});
-			
-			// prevent true fullscreen mode
-			if (this.iframe.hasOwnProperty('webkitDisplayingFullscreen') && this.iframe.webkitDisplayingFullscreen) {
-				this.iframe.webkitExitFullscreen();
-			}
+			 
 		},
 		onSeek: function(data) { 
 			var line = this.getLineByTime(data.seconds);
@@ -360,7 +393,14 @@
 			else {
 				t.hide();
 			}
-		} 
+		},
+		destroy: function() {
+			this.froogaloop = null;
+			if (this.options.select) {
+				$(this.options.select).remove();
+			} 
+			$(this.container).remove();
+		}
 
 	};
 	 
@@ -374,7 +414,8 @@
 	 */
 	
 	
-	$.fn.vimeosubs = function(options) {
+	$.fn.vimeosubs = function(options) { 
+ 
 		// define variables
 		var iframe, o, src, vimeo_id, query_params, container, 
 			swf_id, swf_attributes, swf_params, swf_flashVars, swf_embedHandler;
@@ -537,9 +578,8 @@
 		dynpos: true,
 		
 		/** clients that will be forced to use the html5 player */
-		htmlClients: ['iPad', 'iPhone']
+		htmlClients: ['iPad', 'iPhone', 'Safari']
 		 
 	};
 	
 }(jQuery));
- 
